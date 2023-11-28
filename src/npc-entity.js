@@ -1,43 +1,22 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118/build/three.module.js';
-import { FBXLoader } from 'https://cdn.jsdelivr.net/npm/three@0.118.1/examples/jsm/loaders/FBXLoader.js';
-import { finite_state_machine } from './finite-state-machine.js';
-import { entity } from './entity.js';
-import { player_entity } from './player-entity.js';
-import { player_state } from './player-state.js';
 
-// Define the quest object
-const killMonstersQuest = {
-  targetMonsterCount: 10,
-  currentProgress: 0,
-  isQuestComplete: false,
-};
+import {FBXLoader} from 'https://cdn.jsdelivr.net/npm/three@0.118.1/examples/jsm/loaders/FBXLoader.js';
 
-// Function to initialize the quest
-function initializeQuest() {
-  killMonstersQuest.currentProgress = 0;
-  killMonstersQuest.isQuestComplete = false;
-  console.log('Quest initialized: Kill 10 monsters!');
-}
+import {finite_state_machine} from './finite-state-machine.js';
+import {entity} from './entity.js';
+import {player_entity} from './player-entity.js'
+import {player_state} from './player-state.js';
 
-// Function to handle monster death and update quest progress
-function handleMonsterDeath() {
-  killMonstersQuest.currentProgress++;
-
-  if (killMonstersQuest.currentProgress >= killMonstersQuest.targetMonsterCount) {
-    killMonstersQuest.isQuestComplete = true;
-    console.log('Quest completed! Return to the NPC.');
-    // Additional logic for quest completion, rewards, etc.
-  }
-}
 
 export const npc_entity = (() => {
+  
+  // for NPC AI input handling. It initializes with default keys set to false.
   class AIInput {
     constructor() {
-      this._Init();
+      this._Init();    
     }
 
     _Init() {
-      // Initialize keys for NPC movement
       this._keys = {
         forward: false,
         backward: false,
@@ -47,8 +26,9 @@ export const npc_entity = (() => {
         shift: false,
       };
     }
-  }
+  };
 
+  // Manages the NPC's finite state machine.
   class NPCFSM extends finite_state_machine.FiniteStateMachine {
     constructor(proxy) {
       super();
@@ -57,13 +37,12 @@ export const npc_entity = (() => {
     }
 
     _Init() {
-      // Add states for NPC finite state machine
       this._AddState('idle', player_state.IdleState);
       this._AddState('walk', player_state.WalkState);
       this._AddState('death', player_state.DeathState);
       this._AddState('attack', player_state.AttackState);
     }
-  }
+  };
 
   class NPCController extends entity.Component {
     constructor(params) {
@@ -73,7 +52,6 @@ export const npc_entity = (() => {
 
     _Init(params) {
       this._params = params;
-      // Set up parameters for NPC movement
       this._decceleration = new THREE.Vector3(-0.0005, -0.0001, -5.0);
       this._acceleration = new THREE.Vector3(1, 0.25, 40.0);
       this._velocity = new THREE.Vector3(0, 0, 0);
@@ -81,33 +59,23 @@ export const npc_entity = (() => {
 
       this._animations = {};
       this._input = new AIInput();
-      // Set up NPC finite state machine
+      // FIXME
       this._stateMachine = new NPCFSM(
-        new player_entity.BasicCharacterControllerProxy(this._animations)
-      );
+          new player_entity.BasicCharacterControllerProxy(this._animations));
 
       this._LoadModels();
     }
 
     InitComponent() {
-      // Register handlers for NPC events
-      this._RegisterHandler('health.death', (m) => {
-        this._OnDeath(m);
-      });
-      this._RegisterHandler('update.position', (m) => {
-        this._OnPosition(m);
-      });
+      this._RegisterHandler('health.death', (m) => { this._OnDeath(m); });
+      this._RegisterHandler('update.position', (m) => { this._OnPosition(m); });
     }
 
     _OnDeath(msg) {
-      // Set NPC state to death when health reaches zero
       this._stateMachine.SetState('death');
-      // Update quest progress upon monster death
-      handleMonsterDeath();
     }
 
     _OnPosition(m) {
-      // Update NPC position based on received position message
       if (this._target) {
         this._target.position.copy(m.value);
         this._target.position.y = 0.35;
@@ -118,7 +86,6 @@ export const npc_entity = (() => {
       const loader = new FBXLoader();
       loader.setPath('./resources/monsters/FBX/');
       loader.load(this._params.resourceName, (glb) => {
-        // Load 3D model for NPC
         this._target = glb;
         this._params.scene.add(this._target);
 
@@ -127,12 +94,11 @@ export const npc_entity = (() => {
         this._target.position.y += 0.35;
         const texLoader = new THREE.TextureLoader();
         const texture = texLoader.load(
-          './resources/monsters/Textures/' + this._params.resourceTexture
-        );
+            './resources/monsters/Textures/' + this._params.resourceTexture);
         texture.encoding = THREE.sRGBEncoding;
         texture.flipY = true;
 
-        this._target.traverse((c) => {
+        this._target.traverse(c => {
           c.castShadow = true;
           c.receiveShadow = true;
           if (c.material) {
@@ -145,15 +111,14 @@ export const npc_entity = (() => {
 
         const fbx = glb;
         const _FindAnim = (animName) => {
-          // Find animation clips for NPC
           for (let i = 0; i < fbx.animations.length; i++) {
             if (fbx.animations[i].name.includes(animName)) {
               const clip = fbx.animations[i];
               const action = this._mixer.clipAction(clip);
               return {
                 clip: clip,
-                action: action,
-              };
+                action: action
+              }
             }
           }
           return null;
@@ -169,12 +134,10 @@ export const npc_entity = (() => {
     }
 
     get Position() {
-      // Get current NPC position
       return this._position;
     }
 
     get Rotation() {
-      // Get current NPC rotation
       if (!this._target) {
         return new THREE.Quaternion();
       }
@@ -183,7 +146,6 @@ export const npc_entity = (() => {
 
     _FindIntersections(pos) {
       const _IsAlive = (c) => {
-        // Helper function to check if entity is alive
         const h = c.entity.GetComponent('HealthComponent');
         if (!h) {
           return true;
@@ -192,17 +154,14 @@ export const npc_entity = (() => {
       };
 
       const grid = this.GetComponent('SpatialGridController');
-      // Find nearby entities for NPC
-      const nearby = grid.FindNearbyEntities(2).filter((e) => _IsAlive(e));
+      const nearby = grid.FindNearbyEntities(2).filter(e => _IsAlive(e));
       const collisions = [];
 
       for (let i = 0; i < nearby.length; ++i) {
         const e = nearby[i].entity;
-        const d =
-          ((pos.x - e._position.x) ** 2 + (pos.z - e._position.z) ** 2) ** 0.5;
+        const d = ((pos.x - e._position.x) ** 2 + (pos.z - e._position.z) ** 2) ** 0.5;
 
         // HARDCODED
-        // Check for collisions with other entities
         if (d <= 4) {
           collisions.push(nearby[i].entity);
         }
@@ -212,7 +171,6 @@ export const npc_entity = (() => {
 
     _FindPlayer(pos) {
       const _IsAlivePlayer = (c) => {
-        // Helper function to check if player entity is alive
         const h = c.entity.GetComponent('HealthComponent');
         if (!h) {
           return false;
@@ -224,9 +182,7 @@ export const npc_entity = (() => {
       };
 
       const grid = this.GetComponent('SpatialGridController');
-      const nearby = grid
-        .FindNearbyEntities(100)
-        .filter((c) => _IsAlivePlayer(c));
+      const nearby = grid.FindNearbyEntities(100).filter(c => _IsAlivePlayer(c));
 
       if (nearby.length == 0) {
         return new THREE.Vector3(0, 0, 0);
@@ -242,11 +198,9 @@ export const npc_entity = (() => {
 
     _UpdateAI(timeInSeconds) {
       const currentState = this._stateMachine._currentState;
-      if (
-        currentState.Name != 'walk' &&
-        currentState.Name != 'run' &&
-        currentState.Name != 'idle'
-      ) {
+      if (currentState.Name != 'walk' &&
+          currentState.Name != 'run' &&
+          currentState.Name != 'idle') {
         return;
       }
 
@@ -254,7 +208,8 @@ export const npc_entity = (() => {
         return;
       }
 
-      if (currentState.Name == 'idle' || currentState.Name == 'walk') {
+      if (currentState.Name == 'idle' ||
+          currentState.Name == 'walk') {
         this._OnAIWalk(timeInSeconds);
       }
     }
@@ -264,23 +219,21 @@ export const npc_entity = (() => {
 
       const velocity = this._velocity;
       const frameDecceleration = new THREE.Vector3(
-        velocity.x * this._decceleration.x,
-        velocity.y * this._decceleration.y,
-        velocity.z * this._decceleration.z
+          velocity.x * this._decceleration.x,
+          velocity.y * this._decceleration.y,
+          velocity.z * this._decceleration.z
       );
       frameDecceleration.multiplyScalar(timeInSeconds);
       frameDecceleration.z = Math.sign(frameDecceleration.z) * Math.min(
-        Math.abs(frameDecceleration.z),
-        Math.abs(velocity.z)
-      );
-
+          Math.abs(frameDecceleration.z), Math.abs(velocity.z));
+  
       velocity.add(frameDecceleration);
 
       const controlObject = this._target;
       const _Q = new THREE.Quaternion();
       const _A = new THREE.Vector3();
       const _R = controlObject.quaternion.clone();
-
+  
       this._input._keys.forward = false;
 
       const acc = this._acceleration;
@@ -293,28 +246,27 @@ export const npc_entity = (() => {
 
       const m = new THREE.Matrix4();
       m.lookAt(
-        new THREE.Vector3(0, 0, 0),
-        dirToPlayer,
-        new THREE.Vector3(0, 1, 0)
-      );
+          new THREE.Vector3(0, 0, 0),
+          dirToPlayer,
+          new THREE.Vector3(0, 1, 0));
       _R.setFromRotationMatrix(m);
-
+  
       controlObject.quaternion.copy(_R);
-
+  
       const oldPosition = new THREE.Vector3();
       oldPosition.copy(controlObject.position);
-
+  
       const forward = new THREE.Vector3(0, 0, 1);
       forward.applyQuaternion(controlObject.quaternion);
       forward.normalize();
-
+  
       const sideways = new THREE.Vector3(1, 0, 0);
       sideways.applyQuaternion(controlObject.quaternion);
       sideways.normalize();
-
+  
       sideways.multiplyScalar(velocity.x * timeInSeconds);
       forward.multiplyScalar(velocity.z * timeInSeconds);
-
+  
       const pos = controlObject.position.clone();
       pos.add(forward);
       pos.add(sideways);
@@ -328,7 +280,7 @@ export const npc_entity = (() => {
 
       controlObject.position.copy(pos);
       this._position.copy(pos);
-
+  
       this._parent.SetPosition(this._position);
       this._parent.SetQuaternion(this._target.quaternion);
     }
@@ -353,14 +305,15 @@ export const npc_entity = (() => {
           time: this._stateMachine._currentState._action.time,
         });
       }
-
+      
       if (this._mixer) {
         this._mixer.update(timeInSeconds);
       }
     }
-  }
+  };
 
   return {
     NPCController: NPCController,
   };
+
 })();

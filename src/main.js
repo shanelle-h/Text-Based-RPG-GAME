@@ -19,19 +19,6 @@ import {inventory_controller} from './weapons-controller.js';
 import {equip_weapon_component} from './equip-weapon-component.js';
 import {attack_controller} from './attacker-controller.js';
 
-// Quest definition
-class Quest {
-  constructor() {
-    this.isQuestComplete = false;
-  }
-
-  completeQuest() {
-    this.isQuestComplete = true;
-  }
-}
-
-// Instantiate the quest
-const killMonstersQuest = new Quest('Kill Monsters', 10);
 
 const _VS = `
 varying vec3 vWorldPosition;
@@ -42,7 +29,6 @@ void main() {
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 }`;
-
 
 
 const _FS = `
@@ -195,18 +181,18 @@ class HackNSlashDemo {
   _LoadFoliage() {
     for (let i = 0; i < 100; ++i) {
       const names = [
-        'CommonTree_Dead', 'CommonTree',
-        'BirchTree', 'BirchTree_Dead',
-        'Willow', 'Willow_Dead',
-        'PineTree',
+          'CommonTree_Dead', 'CommonTree',
+          'BirchTree', 'BirchTree_Dead',
+          'Willow', 'Willow_Dead',
+          'PineTree',
       ];
       const name = names[math.rand_int(0, names.length - 1)];
       const index = math.rand_int(1, 5);
 
       const pos = new THREE.Vector3(
-        (Math.random() * 2.0 - 1.0) * 500,
-        0,
-        (Math.random() * 2.0 - 1.0) * 500);
+          (Math.random() * 2.0 - 1.0) * 500,
+          0,
+          (Math.random() * 2.0 - 1.0) * 500);
 
       const e = new entity.Entity();
       e.AddComponent(new gltf_component.StaticModelComponent({
@@ -220,7 +206,7 @@ class HackNSlashDemo {
         castShadow: true,
       }));
       e.AddComponent(
-        new spatial_grid_controller.SpatialGridController({ grid: this._grid }));
+          new spatial_grid_controller.SpatialGridController({grid: this._grid}));
       e.SetPosition(pos);
       this._entityManager.Add(e);
       e.SetActive(false);
@@ -235,50 +221,50 @@ class HackNSlashDemo {
 
     const levelUpSpawner = new entity.Entity();
     levelUpSpawner.AddComponent(new level_up_component.LevelUpComponentSpawner({
-      camera: this._camera,
-      scene: this._scene,
+        camera: this._camera,
+        scene: this._scene,
     }));
     this._entityManager.Add(levelUpSpawner, 'level-up-spawner');
 
     const axe = new entity.Entity();
     axe.AddComponent(new inventory_controller.InventoryItem({
-      type: 'weapon',
-      damage: 3,
-      renderParams: {
-        name: 'Axe',
-        scale: 0.25,
-        icon: 'war-axe-64.png',
-      },
+        type: 'weapon',
+        damage: 3,
+        renderParams: {
+          name: 'Axe',
+          scale: 0.25,
+          icon: 'war-axe-64.png',
+        },
     }));
     this._entityManager.Add(axe);
 
     const sword = new entity.Entity();
     sword.AddComponent(new inventory_controller.InventoryItem({
-      type: 'weapon',
-      damage: 3,
-      renderParams: {
-        name: 'Sword',
-        scale: 0.25,
-        icon: 'pointy-sword-64.png',
-      },
+        type: 'weapon',
+        damage: 3,
+        renderParams: {
+          name: 'Sword',
+          scale: 0.25,
+          icon: 'pointy-sword-64.png',
+        },
     }));
     this._entityManager.Add(sword);
 
     const girl = new entity.Entity();
     girl.AddComponent(new gltf_component.AnimatedModelComponent({
-      scene: this._scene,
-      resourcePath: './resources/girl/',
-      resourceName: 'peasant_girl.fbx',
-      resourceAnimation: 'Standing Idle.fbx',
-      scale: 0.035,
-      receiveShadow: true,
-      castShadow: true,
+        scene: this._scene,
+        resourcePath: './resources/girl/',
+        resourceName: 'peasant_girl.fbx',
+        resourceAnimation: 'Standing Idle.fbx',
+        scale: 0.035,
+        receiveShadow: true,
+        castShadow: true,
     }));
     girl.AddComponent(new spatial_grid_controller.SpatialGridController({
-      grid: this._grid,
+        grid: this._grid,
     }));
     girl.AddComponent(new player_input.PickableComponent());
-    girl.AddComponent(new task_component.QuestComponent({ quest: killMonstersQuest }));
+    girl.AddComponent(new task_component.QuestComponent());
     girl.SetPosition(new THREE.Vector3(30, 0, 0));
     this._entityManager.Add(girl);
 
@@ -286,48 +272,47 @@ class HackNSlashDemo {
     player.AddComponent(new player_input.BasicCharacterControllerInput(params));
     player.AddComponent(new player_entity.BasicCharacterController(params));
     player.AddComponent(
-      new equip_weapon_component.EquipWeapon({ anchor: 'RightHandIndex1' }));
+      new equip_weapon_component.EquipWeapon({anchor: 'RightHandIndex1'}));
     player.AddComponent(new inventory_controller.InventoryController(params));
     player.AddComponent(new health_component.HealthComponent({
-      updateUI: true,
-      health: 100,
-      maxHealth: 100,
-      strength: 50,
-      wisdomness: 5,
-      benchpress: 20,
-      curl: 100,
-      experience: 0,
-      level: 1,
+        updateUI: true,
+        health: 100,
+        maxHealth: 100,
+        strength: 50,
+        wisdomness: 5,
+        benchpress: 20,
+        curl: 100,
+        experience: 0,
+        level: 1,
     }));
     player.AddComponent(
-      new spatial_grid_controller.SpatialGridController({ grid: this._grid }));
-    player.AddComponent(new attack_controller.AttackController({ timing: 0.7 }));
+        new spatial_grid_controller.SpatialGridController({grid: this._grid}));
+    player.AddComponent(new attack_controller.AttackController({timing: 0.7}));
     this._entityManager.Add(player, 'player');
 
     player.Broadcast({
-      topic: 'inventory.add',
-      value: axe.Name,
-      added: false,
+        topic: 'inventory.add',
+        value: axe.Name,
+        added: false,
     });
 
     player.Broadcast({
-      topic: 'inventory.add',
-      value: sword.Name,
-      added: false,
+        topic: 'inventory.add',
+        value: sword.Name,
+        added: false,
     });
 
     player.Broadcast({
-      topic: 'inventory.equip',
-      value: sword.Name,
-      added: false,
+        topic: 'inventory.equip',
+        value: sword.Name,
+        added: false,
     });
 
     const camera = new entity.Entity();
     camera.AddComponent(
-      new third_person_camera.ThirdPersonCamera({
-        camera: this._camera,
-        target: this._entityManager.Get('player'),
-      }));
+        new third_person_camera.ThirdPersonCamera({
+            camera: this._camera,
+            target: this._entityManager.Get('player')}));
     this._entityManager.Add(camera, 'player-camera');
 
     for (let i = 0; i < 50; ++i) {
@@ -361,35 +346,35 @@ class HackNSlashDemo {
 
       const npc = new entity.Entity();
       npc.AddComponent(new npc_entity.NPCController({
-        camera: this._camera,
-        scene: this._scene,
-        resourceName: m.resourceName,
-        resourceTexture: m.resourceTexture,
-      }));
-      npc.AddComponent(
-        new health_component.HealthComponent({
-          health: 50,
-          maxHealth: 50,
-          strength: 2,
-          wisdomness: 2,
-          benchpress: 3,
-          curl: 1,
-          experience: 0,
-          level: 1,
           camera: this._camera,
           scene: this._scene,
-        }));
-      npc.AddComponent(
-        new spatial_grid_controller.SpatialGridController({ grid: this._grid }));
-      npc.AddComponent(new health_bar.HealthBar({
-        parent: this._scene,
-        camera: this._camera,
+          resourceName: m.resourceName,
+          resourceTexture: m.resourceTexture,
       }));
-      npc.AddComponent(new attack_controller.AttackController({ timing: 0.35 }));
+      npc.AddComponent(
+          new health_component.HealthComponent({
+              health: 50,
+              maxHealth: 50,
+              strength: 2,
+              wisdomness: 2,
+              benchpress: 3,
+              curl: 1,
+              experience: 0,
+              level: 1,
+              camera: this._camera,
+              scene: this._scene,
+          }));
+      npc.AddComponent(
+          new spatial_grid_controller.SpatialGridController({grid: this._grid}));
+      npc.AddComponent(new health_bar.HealthBar({
+          parent: this._scene,
+          camera: this._camera,
+      }));
+      npc.AddComponent(new attack_controller.AttackController({timing: 0.35}));
       npc.SetPosition(new THREE.Vector3(
-        (Math.random() * 2 - 1) * 500,
-        0,
-        (Math.random() * 2 - 1) * 500));
+          (Math.random() * 2 - 1) * 500,
+          0,
+          (Math.random() * 2 - 1) * 500));
       this._entityManager.Add(npc);
     }
   }
@@ -431,22 +416,8 @@ class HackNSlashDemo {
     this._UpdateSun();
 
     this._entityManager.Update(timeElapsedS);
-
-    // Call the quest completion check
-    this.checkQuestCompletion();
-
-    // Additional logic for your game loop
-  }
-
-  // Function to check quest completion (called in your update loop)
-  checkQuestCompletion() {
-    if (killMonstersQuest.isQuestComplete) {
-      // Additional logic for handling completed quests
-      console.log('Quest completed! Do something...');
-    }
   }
 }
-
 
 
 let _APP = null;
@@ -454,5 +425,3 @@ let _APP = null;
 window.addEventListener('DOMContentLoaded', () => {
   _APP = new HackNSlashDemo();
 });
-
-
